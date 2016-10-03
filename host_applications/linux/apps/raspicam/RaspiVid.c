@@ -2838,9 +2838,7 @@ error:
       // Disable all our ports that are not handled by connections
       check_disable_port(camera_still_port);
       check_disable_port(encoder_output_port);
-
-      if (state.raw_output)
-         check_disable_port(splitter_output_port);
+      check_disable_port(splitter_output_port);
 
       if (state.preview_parameters.wantPreview && state.preview_connection)
          mmal_connection_destroy(state.preview_connection);
@@ -2878,7 +2876,7 @@ error:
       destroy_encoder_component(&state);
       raspipreview_destroy(&state.preview_parameters);
 
-      if (state.raw_output)
+      if (state.splitter_component)
          destroy_splitter_component(&state);
 
       destroy_camera_component(&state);
