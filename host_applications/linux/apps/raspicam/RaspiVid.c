@@ -2618,8 +2618,8 @@ int main(int argc, const char **argv)
             if (!state.callback_data.raw_file_handle)
             {
                // Notify user, carry on but discarding encoded output buffers
-               fprintf(stderr, "Error opening output file: %s\nNo output file will be generated\n",state.raw_filename);
-               state.raw_output=0;
+               fprintf(stderr, "Error opening output file: %s\nNo output file will be generated\n", state.raw_filename);
+               state.raw_output = 0;
             }
          }
 
