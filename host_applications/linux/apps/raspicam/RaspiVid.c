@@ -2669,9 +2669,6 @@ int main(int argc, const char **argv)
          }
 
          // Set up our userdata - this is passed though to the callback where we need the information.
-         state.callback_data.pstate = &state;
-         state.callback_data.abort = 0;
-
          encoder_output_port->userdata = (struct MMAL_PORT_USERDATA_T *)&state.callback_data;
 
          if (state.verbose)
