@@ -2729,7 +2729,7 @@ int main(int argc, const char **argv)
                if (state.raw_output) {
                   int num = mmal_queue_length(state.splitter_pool->queue);
                   int q;
-                  for (q=0;q<num;q++)
+                  for (q = 0; q < num; q++)
                   {
                      MMAL_BUFFER_HEADER_T *buffer = mmal_queue_get(state.splitter_pool->queue);
 
