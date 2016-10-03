@@ -1742,7 +1742,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
       goto error;
    }
 
-   if (!splitter->output_num || splitter->output_num < 2)
+   if (splitter->output_num < 2)
    {
       status = MMAL_ENOSYS;
       vcos_log_error("Splitter doesn't have enough output ports");
