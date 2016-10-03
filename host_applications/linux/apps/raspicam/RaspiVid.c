@@ -2875,10 +2875,7 @@ error:
 
       destroy_encoder_component(&state);
       raspipreview_destroy(&state.preview_parameters);
-
-      if (state.splitter_component)
-         destroy_splitter_component(&state);
-
+      destroy_splitter_component(&state);
       destroy_camera_component(&state);
 
       if (state.verbose)
