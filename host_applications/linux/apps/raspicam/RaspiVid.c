@@ -1749,7 +1749,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
       goto error;
    }
 
-   /* Ensure there are enough buffers to avoid dropping frames */
+   /* Ensure there are enough buffers to avoid dropping frames: */
    mmal_format_copy(splitter->input[0]->format, state->camera_component->output[MMAL_CAMERA_PREVIEW_PORT]->format);
 
    if (splitter->input[0]->buffer_num < VIDEO_OUTPUT_BUFFERS_NUM)
@@ -1763,6 +1763,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
       goto error;
    }
 
+   /* Splitter can do format conversions, configura format for its output port: */
    for (i = 0; i < splitter->output_num; i++)
    {
       mmal_format_copy(splitter->output[i]->format, splitter->input[0]->format);
