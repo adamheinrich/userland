@@ -1594,30 +1594,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
    // Set the encode format on the video  port
 
    format = video_port->format;
-
-   if (state->raw_output)
-   {
-      switch (state->raw_output_fmt)
-      {
-      case RAW_OUTPUT_FMT_YUV:
-      case RAW_OUTPUT_FMT_GRAY: /* Grayscale image contains only luma (Y) component */
-         format->encoding = MMAL_ENCODING_I420;
-         format->encoding_variant = MMAL_ENCODING_I420;
-         break;
-      case RAW_OUTPUT_FMT_RGB:
-         format->encoding = mmal_util_rgb_order_fixed(still_port) ? MMAL_ENCODING_RGB24 : MMAL_ENCODING_BGR24;
-         format->encoding_variant = 0;  /* Irrelevant when not in opaque mode */
-         break;
-      default:
-         vcos_log_error("unknown raw output format");
-         goto error;
-      }
-   }
-   else
-   {
-      format->encoding_variant = MMAL_ENCODING_I420;
-      format->encoding = MMAL_ENCODING_OPAQUE;
-   }
+   format->encoding_variant = MMAL_ENCODING_I420;
 
    if(state->camera_parameters.shutter_speed > 6000000)
    {
@@ -1632,6 +1609,7 @@ static MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
         mmal_port_parameter_set(video_port, &fps_range.hdr);
    }
 
+   format->encoding = MMAL_ENCODING_OPAQUE;
    format->es->video.width = VCOS_ALIGN_UP(state->width, 32);
    format->es->video.height = VCOS_ALIGN_UP(state->height, 16);
    format->es->video.crop.x = 0;
@@ -1737,9 +1715,16 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
 {
    MMAL_COMPONENT_T *splitter = 0;
    MMAL_PORT_T *splitter_output = NULL;
+   MMAL_ES_FORMAT_T *format;
    MMAL_STATUS_T status;
    MMAL_POOL_T *pool;
    int i;
+
+   if (state->camera_component == NULL)
+   {
+      vcos_log_error("Camera component must be created before splitter");
+      goto error;
+   }
 
    /* Create the component */
    status = mmal_component_create(MMAL_COMPONENT_DEFAULT_VIDEO_SPLITTER, &splitter);
@@ -1764,8 +1749,6 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
       goto error;
    }
 
-   splitter_output = splitter->output[SPLITTER_OUTPUT_PORT];
-
    /* Ensure there are enough buffers to avoid dropping frames */
    mmal_format_copy(splitter->input[0]->format, state->camera_component->output[MMAL_CAMERA_VIDEO_PORT]->format);
 
@@ -1783,6 +1766,31 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
    for (i = 0; i < splitter->output_num; i++)
    {
       mmal_format_copy(splitter->output[i]->format, splitter->input[0]->format);
+
+      if (i == SPLITTER_OUTPUT_PORT)
+      {
+         format = splitter->output[i]->format;
+
+         switch (state->raw_output_fmt)
+         {
+         case RAW_OUTPUT_FMT_YUV:
+         case RAW_OUTPUT_FMT_GRAY: /* Grayscale image contains only luma (Y) component */
+            format->encoding = MMAL_ENCODING_I420;
+            format->encoding_variant = MMAL_ENCODING_I420;
+            break;
+         case RAW_OUTPUT_FMT_RGB:
+            if (mmal_util_rgb_order_fixed(state->camera_component->output[MMAL_CAMERA_CAPTURE_PORT]))
+               format->encoding = MMAL_ENCODING_RGB24;
+            else
+               format->encoding = MMAL_ENCODING_BGR24;
+            format->encoding_variant = 0;  /* Irrelevant when not in opaque mode */
+            break;
+         default:
+            vcos_log_error("unknown raw output format");
+            goto error;
+         }
+      }
+
       status = mmal_port_format_commit(splitter->output[i]);
 
       if (status != MMAL_SUCCESS)
@@ -1802,6 +1810,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
    }
 
    /* Create pool of buffer headers for the output port to consume */
+   splitter_output = splitter->output[SPLITTER_OUTPUT_PORT];
    pool = mmal_port_pool_create(splitter_output, splitter_output->buffer_num, splitter_output->buffer_size);
 
    if (!pool)
