@@ -44,7 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * are simply written straight to the file in the requisite buffer callback.
  *
  * If raw option is selected, a video splitter component is connected between
- * camera and encoder. This allows us to set up callback for raw camera data
+ * camera and splitter. This allows us to set up callback for raw camera data
  * (in YUV420 or RGB format) which might be useful for further image processing.
  *
  * We use the RaspiCamControl code to handle the specific camera settings.
@@ -91,7 +91,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Port configuration for the splitter component
 #define SPLITTER_OUTPUT_PORT 0
-#define SPLITTER_ENCODER_PORT 1
+#define SPLITTER_PREVIEW_PORT 1
 
 // Video format information
 // 0 implies variable
@@ -200,9 +200,9 @@ struct RASPIVID_STATE_S
    MMAL_COMPONENT_T *camera_component;    /// Pointer to the camera component
    MMAL_COMPONENT_T *splitter_component;  /// Pointer to the splitter component
    MMAL_COMPONENT_T *encoder_component;   /// Pointer to the encoder component
-   MMAL_CONNECTION_T *preview_connection; /// Pointer to the connection from camera to preview
-   MMAL_CONNECTION_T *splitter_connection;/// Pointer to the connection from camera to encoder or splitter
-   MMAL_CONNECTION_T *encoder_connection; /// Pointer to the connection from splitter to encoder
+   MMAL_CONNECTION_T *preview_connection; /// Pointer to the connection from camera or splitter to preview
+   MMAL_CONNECTION_T *splitter_connection;/// Pointer to the connection from camera to splitter
+   MMAL_CONNECTION_T *encoder_connection; /// Pointer to the connection from camera to encoder
 
    MMAL_POOL_T *splitter_pool; /// Pointer to the pool of buffers used by splitter output port 0
    MMAL_POOL_T *encoder_pool; /// Pointer to the pool of buffers used by encoder output port
@@ -1750,7 +1750,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
    }
 
    /* Ensure there are enough buffers to avoid dropping frames */
-   mmal_format_copy(splitter->input[0]->format, state->camera_component->output[MMAL_CAMERA_VIDEO_PORT]->format);
+   mmal_format_copy(splitter->input[0]->format, state->camera_component->output[MMAL_CAMERA_PREVIEW_PORT]->format);
 
    if (splitter->input[0]->buffer_num < VIDEO_OUTPUT_BUFFERS_NUM)
       splitter->input[0]->buffer_num = VIDEO_OUTPUT_BUFFERS_NUM;
@@ -2347,7 +2347,7 @@ int main(int argc, const char **argv)
    MMAL_PORT_T *encoder_output_port = NULL;
    MMAL_PORT_T *splitter_input_port = NULL;
    MMAL_PORT_T *splitter_output_port = NULL;
-   MMAL_PORT_T *splitter_encoder_port = NULL;
+   MMAL_PORT_T *splitter_preview_port = NULL;
 
    bcm_host_init();
 
@@ -2428,59 +2428,86 @@ int main(int argc, const char **argv)
       {
          splitter_input_port = state.splitter_component->input[0];
          splitter_output_port = state.splitter_component->output[SPLITTER_OUTPUT_PORT];
-         splitter_encoder_port = state.splitter_component->output[SPLITTER_ENCODER_PORT];
+         splitter_preview_port = state.splitter_component->output[SPLITTER_PREVIEW_PORT];
       }
 
       if (state.preview_parameters.wantPreview )
       {
-         if (state.verbose)
+         if (state.raw_output)
          {
-            fprintf(stderr, "Connecting camera preview port to preview input port\n");
-            fprintf(stderr, "Starting video preview\n");
-         }
+            if (state.verbose)
+               fprintf(stderr, "Connecting camera preview port to splitter input port\n");
 
-         // Connect camera to preview
-         status = connect_ports(camera_preview_port, preview_input_port, &state.preview_connection);
+            // Connect camera to splitter
+            status = connect_ports(camera_preview_port, splitter_input_port, &state.splitter_connection);
+
+            if (status != MMAL_SUCCESS)
+            {
+               state.splitter_connection = NULL;
+               vcos_log_error("%s: Failed to connect camera preview port to splitter input", __func__);
+               goto error;
+            }
+
+            if (state.verbose)
+            {
+               fprintf(stderr, "Connecting splitter preview port to preview input port\n");
+               fprintf(stderr, "Starting video preview\n");
+            }
+
+            // Connect splitter to preview
+            status = connect_ports(splitter_preview_port, preview_input_port, &state.preview_connection);
+         }
+         else
+         {
+            if (state.verbose)
+            {
+               fprintf(stderr, "Connecting camera preview port to preview input port\n");
+               fprintf(stderr, "Starting video preview\n");
+            }
+
+            // Connect camera to preview
+            status = connect_ports(camera_preview_port, preview_input_port, &state.preview_connection);
+         }
 
          if (status != MMAL_SUCCESS)
             state.preview_connection = NULL;
       }
       else
       {
-         status = MMAL_SUCCESS;
-      }
-
-      if (status == MMAL_SUCCESS)
-      {
          if (state.raw_output)
          {
             if (state.verbose)
-               fprintf(stderr, "Connecting camera video port to splitter input port\n");
+               fprintf(stderr, "Connecting camera preview port to splitter input port\n");
 
-            // Now connect the camera to the splitter
-            status = connect_ports(camera_video_port, splitter_input_port, &state.splitter_connection);
+            // Connect camera to splitter
+            status = connect_ports(camera_preview_port, splitter_input_port, &state.splitter_connection);
 
             if (status != MMAL_SUCCESS)
             {
                state.splitter_connection = NULL;
-               vcos_log_error("%s: Failed to connect camera video port to splitter input", __func__);
+               vcos_log_error("%s: Failed to connect camera preview port to splitter input", __func__);
                goto error;
             }
          }
          else
          {
-            if (state.verbose)
-               fprintf(stderr, "Connecting camera video port to encoder input port\n");
+            status = MMAL_SUCCESS;
+         }
+      }
 
-            // Now connect the camera to the splitter
-            status = connect_ports(camera_video_port, encoder_input_port, &state.encoder_connection);
+      if (status == MMAL_SUCCESS)
+      {
+         if (state.verbose)
+            fprintf(stderr, "Connecting camera video port to encoder input port\n");
 
-            if (status != MMAL_SUCCESS)
-            {
-               state.encoder_connection = NULL;
-               vcos_log_error("%s: Failed to connect camera video port to encoder input", __func__);
-               goto error;
-            }
+         // Now connect the camera to the splitter
+         status = connect_ports(camera_video_port, encoder_input_port, &state.encoder_connection);
+
+         if (status != MMAL_SUCCESS)
+         {
+            state.encoder_connection = NULL;
+            vcos_log_error("%s: Failed to connect camera video port to encoder input", __func__);
+            goto error;
          }
       }
 
@@ -2502,20 +2529,7 @@ int main(int argc, const char **argv)
 
             if (status != MMAL_SUCCESS)
             {
-               vcos_log_error("Failed to setup splitter output port");
-               goto error;
-            }
-
-            if (state.verbose)
-               fprintf(stderr, "Connecting splitter encoder port to encoder input port\n");
-
-            // Now connect the splitter to the encoder
-            status = connect_ports(splitter_encoder_port, encoder_input_port, &state.encoder_connection);
-
-            if (status != MMAL_SUCCESS)
-            {
-               state.encoder_connection = NULL;
-               vcos_log_error("%s: Failed to connect splitter encoder port to encoder input", __func__);
+               vcos_log_error("%s: Failed to setup splitter output port", __func__);
                goto error;
             }
          }
