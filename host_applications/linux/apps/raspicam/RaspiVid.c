@@ -1846,7 +1846,7 @@ static void destroy_splitter_component(RASPIVID_STATE *state)
    // Get rid of any port buffers first
    if (state->splitter_pool)
    {
-      mmal_port_pool_destroy(state->splitter_component->output[0], state->splitter_pool);
+      mmal_port_pool_destroy(state->splitter_component->output[SPLITTER_OUTPUT_PORT], state->splitter_pool);
    }
 
    if (state->splitter_component)
