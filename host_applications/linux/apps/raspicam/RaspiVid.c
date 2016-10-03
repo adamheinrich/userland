@@ -44,7 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * are simply written straight to the file in the requisite buffer callback.
  *
  * If raw option is selected, a video splitter component is connected between
- * camera and splitter. This allows us to set up callback for raw camera data
+ * camera and preview. This allows us to set up callback for raw camera data
  * (in YUV420 or RGB format) which might be useful for further image processing.
  *
  * We use the RaspiCamControl code to handle the specific camera settings.
@@ -1367,9 +1367,9 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
 }
 
 /**
- *  buffer header callback function for camera
+ *  buffer header callback function for splitter
  *
- *  Callback will dump buffer data to internal buffer
+ *  Callback will dump buffer data to the specific file
  *
  * @param port Pointer to port from which callback originated
  * @param buffer mmal buffer header pointer
@@ -2501,7 +2501,7 @@ int main(int argc, const char **argv)
          if (state.verbose)
             fprintf(stderr, "Connecting camera video port to encoder input port\n");
 
-         // Now connect the camera to the splitter
+         // Now connect the camera to the encoder
          status = connect_ports(camera_video_port, encoder_input_port, &state.encoder_connection);
 
          if (status != MMAL_SUCCESS)
