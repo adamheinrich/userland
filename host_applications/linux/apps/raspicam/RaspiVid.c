@@ -1374,7 +1374,7 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
  * @param port Pointer to port from which callback originated
  * @param buffer mmal buffer header pointer
  */
-static void camera_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
+static void splitter_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
 {
    MMAL_BUFFER_HEADER_T *new_buffer;
    static int64_t base_time =  -1;
@@ -2526,7 +2526,7 @@ int main(int argc, const char **argv)
                fprintf(stderr, "Enabling splitter output port\n");
 
             // Enable the splitter output port and tell it its callback function
-            status = mmal_port_enable(splitter_output_port, camera_buffer_callback);
+            status = mmal_port_enable(splitter_output_port, splitter_buffer_callback);
 
             if (status != MMAL_SUCCESS)
             {
