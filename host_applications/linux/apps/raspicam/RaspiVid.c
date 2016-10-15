@@ -1377,14 +1377,6 @@ static void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buf
 static void splitter_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
 {
    MMAL_BUFFER_HEADER_T *new_buffer;
-   static int64_t base_time =  -1;
-
-   // All our times based on the receipt of the first callback
-   if (base_time == -1)
-      base_time = vcos_getmicrosecs64()/1000;
-
-   // We pass our file handle and other stuff in via the userdata field.
-
    PORT_USERDATA *pData = (PORT_USERDATA *)port->userdata;
 
    if (pData)
