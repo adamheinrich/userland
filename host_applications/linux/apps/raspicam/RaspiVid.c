@@ -865,16 +865,11 @@ static int parse_cmdline(int argc, const char **argv, RASPIVID_STATE *state)
       case CommandRawFormat:
       {
          state->raw_output_fmt = raspicli_map_xref(argv[i + 1], raw_output_fmt_map, raw_output_fmt_map_size);
-         i++;
 
          if (state->raw_output_fmt == -1)
-            state->raw_output_fmt = RAW_OUTPUT_FMT_YUV;
-
-         if (!state->raw_output)
-         {
-            fprintf(stderr, "--raw-fmt is only valid with --raw output selected\n");
             valid = 0;
-         }
+
+         i++;
          break;
       }
 
