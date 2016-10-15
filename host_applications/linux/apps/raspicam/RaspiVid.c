@@ -351,8 +351,8 @@ static COMMAND_LIST cmdline_commands[] =
    { CommandSavePTS,       "-save-pts",   "pts","Save Timestamps to file for mkvmerge", 1 },
    { CommandCodec,         "-codec",      "cd", "Specify the codec to use - H264 (default) or MJPEG", 1 },
    { CommandLevel,         "-level",      "lev","Specify H264 level to use for encoding", 1},
-   { CommandRaw,           "-raw",        "r",  "Output filename <filename> for raw (YUV) video", 1 },
-   { CommandRawFormat,     "-raw-format", "rf", "Specify output format for raw video (yuv, rgb or gray) (valid with --raw)", 1},
+   { CommandRaw,           "-raw",        "r",  "Output filename <filename> for raw video", 1 },
+   { CommandRawFormat,     "-raw-format", "rf", "Specify output format for raw video. Default is yuv", 1},
 };
 
 static int cmdline_commands_size = sizeof(cmdline_commands) / sizeof(cmdline_commands[0]);
