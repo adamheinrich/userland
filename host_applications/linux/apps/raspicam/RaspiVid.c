@@ -1750,7 +1750,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
       goto error;
    }
 
-   /* Splitter can do format conversions, configura format for its output port: */
+   /* Splitter can do format conversions, configure format for its output port: */
    for (i = 0; i < splitter->output_num; i++)
    {
       mmal_format_copy(splitter->output[i]->format, splitter->input[0]->format);
