@@ -1709,6 +1709,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
 
    if (state->camera_component == NULL)
    {
+      status = MMAL_ENOSYS;
       vcos_log_error("Camera component must be created before splitter");
       goto error;
    }
@@ -1774,6 +1775,7 @@ static MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state)
             format->encoding_variant = 0;  /* Irrelevant when not in opaque mode */
             break;
          default:
+            status = MMAL_EINVAL;
             vcos_log_error("unknown raw output format");
             goto error;
          }
