@@ -160,7 +160,7 @@ typedef enum {
    RAW_OUTPUT_FMT_YUV = 1,
    RAW_OUTPUT_FMT_RGB,
    RAW_OUTPUT_FMT_GRAY,
-} raw_output_fmt_t;
+} RAW_OUTPUT_FMT;
 
 /** Structure containing all state information for the current run
  */
@@ -215,7 +215,7 @@ struct RASPIVID_STATE_S
    int inlineMotionVectors;             /// Encoder outputs inline Motion Vectors
    char *imv_filename;                  /// filename of inline Motion Vectors output
    int raw_output;                      /// Output raw video from camera as well
-   raw_output_fmt_t raw_output_fmt;     /// The raw video format
+   RAW_OUTPUT_FMT raw_output_fmt;       /// The raw video format
    char *raw_filename;                  /// Filename for raw video output
    int cameraNum;                       /// Camera number
    int settings;                        /// Request settings from the camera
